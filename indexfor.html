@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>التحويل الذكي — مختبر الفيزياء</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+          integrity="sha512-9lN+N4v1aGdXyCmy2S4PT1nWZ1oQk7Gg4ZQdW5Wk5b0nHkQJ2w9m3J1UO4f8QZJm9Z6lW0v8Yk4r8E3sW7Kq3g=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <style>
+    /* حجم الصور */
+    .lab-logo { width: 180px; height: auto; display: block; margin: 0 auto 10px auto; }
+    .lab-tubes { width: 200px; height: auto; display: block; margin: 10px auto; transition: transform 0.3s ease; }
+    .hero { width: 150px; height: auto; display: block; margin: 0 auto; }
+
+    /* Canvas الخلفية */
+    #backgroundCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Cairo", sans-serif;
+      text-align: center;
+      position: relative;
+      overflow-x: hidden;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Canvas الخلفية -->
+<canvas id="backgroundCanvas"></canvas>
+
+<!-- شاشة البداية -->
+<section id="start-screen" class="screen active">
+  <div class="card">
+    <img class="lab-logo"
+         src="https://media.istockphoto.com/id/1001264912/vector/science-lab-design.jpg?s=612x612&w=0&k=20&c=-cw9gaAzkDaRkjnr3_XaRko1tXnqt0Zfbmx3qPzRX1c="
+         alt="شعار مختبر الفيزياء">
+
+    <h1>التحويل الذكي</h1>
+    <p class="subtitle">مغامرة في مختبر الفيزياء</p>
+
+    <p class="lab-story">
+      ⚠️ <b>تنبيه مختبر الفيزياء</b> ⚠️<br>
+      جهاز تحويل البادئات معطّل! مهمتك إصلاحه عبر تحويل البادئات بشكل صحيح لإنقاذ التجربة.
+    </p>
+
+    <label>اسم الطالب/الطالبة:</label>
+    <input id="student-name" type="text" placeholder="اكتب اسمك هنا">
+
+    <label>اختر الوحدة:</label>
+    <select id="unit-select">
+      <option value="m">المتر (m)</option>
+      <option value="g">الجرام (g)</option>
+      <option value="J">الجول (J)</option>
+      <option value="W">الواط (W)</option>
+    </select>
+
+    <label>مجموعة البادئات:</label>
+    <select id="range-select">
+      <option value="common">الشائعة</option>
+      <option value="extended">الممتدة</option>
+      <option value="full">الكاملة</option>
+    </select>
+
+    <label>عدد الأسئلة في المستوى:</label>
+    <input id="questions-per-level" type="number" value="5" min="3" max="12">
+
+    <img class="lab-tubes"
+         src="https://png.pngtree.com/png-vector/20260205/ourmid/pngtree-chemistry-laboratory-illustration-png-image_18695553.webp"
+         alt="أنابيب اختبار مختبرية">
+
+    <button id="btn-start" class="primary">ابدأ إصلاح الجهاز</button>
+  </div>
+</section>
+
+<!-- شاشة اللعبة -->
+<section id="game-screen" class="screen">
+  <header class="hud">
+    <div class="hud-item">المستوى: <span id="level">1</span>/3</div>
+    <div class="hud-item">النقاط: <span id="score">0</span></div>
+    <div class="hud-item">الوقت: <span id="time">60</span>s</div>
+    <div class="progress-wrap">
+      <div class="progress" id="progress-bar"></div>
+    </div>
+  </header>
+
+  <main class="play-area">
+    <div class="scene">
+      <div class="bg"></div>
+      <img class="hero"
+           src="https://img.freepik.com/free-vector/girl-lab-gown-white_1308-38674.jpg?semt=ais_hybrid&w=740&q=80"
+           alt="شخصية عالِمة في المختبر">
+    </div>
+
+    <div class="panel">
+      <h2 id="question-text">...</h2>
+      <div id="choices" class="choices"></div>
+      <div id="feedback" class="feedback"></div>
+    </div>
+  </main>
+</section>
+
+<!-- شاشة النهاية -->
+<section id="end-screen" class="screen">
+  <div class="card">
+    <h2 id="end-title">أحسنت!</h2>
+    <p id="end-summary"></p>
+
+    <button id="btn-next-level" class="primary">المستوى التالي</button>
+    <button id="btn-restart" class="ghost">إعادة اللعب</button>
+
+    <br><br>
+    <button id="btn-certificate" class="primary" style="display:none;">📄 تحميل شهادة الإنجاز</button>
+  </div>
+</section>
+
+<footer class="credits">
+  © المدرسة: <b>الثانوية الثانية مسارات بمكة المكرمة</b> — بإشراف المعلمة: <b>إيمان الزهراني</b>
+</footer>
+
+<script src="game.js"></script>
+
+<!-- Canvas + تأثير التفاعل -->
+<script>
+  const canvas = document.getElementById('backgroundCanvas');
+  const ctx = canvas.getContext('2d');
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // الفقاعات
+  const bubbles = [];
+  const numBubbles = 30;
+  for (let i = 0; i < numBubbles; i++) {
+    bubbles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      radius: 5 + Math.random() * 10,
+      speed: 0.5 + Math.random(),
+      color: `rgba(255,255,255,${0.3 + Math.random()*0.5})`
+    });
+  }
+
+  // زيادة سرعة الفقاعات عند الإجابة الصحيحة
+  let bubbleSpeedMultiplier = 1;
+
+  const labTubes = document.querySelector('.lab-tubes');
+
+  function drawBackground() {
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, '#c8e6c9');
+    gradient.addColorStop(1, '#b2ebf2');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // رسم الفقاعات
+    bubbles.forEach(b => {
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2);
+      ctx.fillStyle = b.color;
+      ctx.fill();
+    });
+  }
+
+  function updateBubbles() {
+    bubbles.forEach(b => {
+      b.y -= b.speed * bubbleSpeedMultiplier;
+      if (b.y + b.radius < 0) { 
+        b.y = canvas.height + b.radius;
+        b.x = Math.random() * canvas.width;
+      }
+    });
+  }
+
+  function animate() {
+    drawBackground();
+    updateBubbles();
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+
+  // ربط التفاعل مع اللعبة
+  const choices = document.getElementById('choices');
+  choices.addEventListener('click', e => {
+    if (e.target.tagName === 'BUTTON') {
+      // عند الإجابة الصحيحة (يمكن ربطها باللعبة الفعلية)
+      bubbleSpeedMultiplier = 3; // فقاعات أسرع
+      labTubes.style.transform = 'translateY(-10px)'; // حركة الأنابيب
+      setTimeout(() => {
+        bubbleSpeedMultiplier = 1;
+        labTubes.style.transform = 'translateY(0)';
+      }, 500);
+    }
+  });
+</script>
+
+</body>
+</html>
+
