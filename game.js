@@ -1,450 +1,375 @@
-/* =====================================================
-   لعبة "التحويل الذكي" — نسخة المختبر الكامل
-   إعداد: إيمان الزهراني
-   ===================================================== */
+/* =====================================================    
+لعبة "التحويل الذكي" — نسخة محسّنة  
+إعداد: إيمان الزهراني  
+===================================================== */  
 
-/*-----------------------------
- أدوات أساسية
-------------------------------*/
-const $  = sel => document.querySelector(sel);
-const $$ = sel => document.querySelectorAll(sel);
+/*-----------------------------  أدوات أساسية ------------------------------*/ 
+const $  = sel => document.querySelector(sel); 
+const $$ = sel => document.querySelectorAll(sel);  
 
-/*-----------------------------
- عناصر الشاشات والواجهات
-------------------------------*/
-const screens = {
-  start: $('#start-screen'),
-  game:  $('#game-screen'),
-  end:   $('#end-screen'),
-};
+/*-----------------------------  عناصر الشاشات والواجهات ------------------------------*/ 
+const screens = {   
+  start: $('#start-screen'),   
+  game:  $('#game-screen'),   
+  end:   $('#end-screen'), 
+};  
 
-const ui = {
-  level: $('#level'),
-  score: $('#score'),
-  time:  $('#time'),
-  qText: $('#question-text'),
-  choices: $('#choices'),
-  feedback: $('#feedback'),
-  progress: $('#progress-bar'),
+const ui = {   
+  level: $('#level'),   
+  score: $('#score'),   
+  time:  $('#time'),   
+  qText: $('#question-text'),   
+  choices: $('#choices'),   
+  feedback: $('#feedback'),   
+  progress: $('#progress-bar'),    
 
-  endTitle: $('#end-title'),
-  endSummary: $('#end-summary'),
-  btnNext: $('#btn-next-level'),
-  btnRestart: $('#btn-restart'),
-  btnStart: $('#btn-start'),
-  btnCert: $('#btn-certificate'),
+  endTitle: $('#end-title'),   
+  endSummary: $('#end-summary'),   
+  btnNext: $('#btn-next-level'),   
+  btnRestart: $('#btn-restart'),   
+  btnStart: $('#btn-start'),   
+  btnCert: $('#btn-certificate'),    
 
-  unitSelect: $('#unit-select'),
-  rangeSelect: $('#range-select'),
-  qPerLevel: $('#questions-per-level'),
-};
+  unitSelect: $('#unit-select'),   
+  rangeSelect: $('#range-select'),   
+  qPerLevel: $('#questions-per-level'),   
+  studentInput: $('#student-name'), 
+};  
 
-/*-----------------------------
- الحالة العامة للعبة
-------------------------------*/
-const Game = {
-  level: 1,
-  maxLevel: 3,
-  score: 0,
-  timeLeft: 60,
-  timerId: null,
-  asked: 0,
+/*-----------------------------  الحالة العامة للعبة ------------------------------*/ 
+const Game = {   
+  level: 1,   
+  maxLevel: 3,   
+  score: 0,   
+  timeLeft: 60,   
+  timerId: null,   
+  asked: 0,   
+  errors: 0, // عداد الأخطاء   
 
-  questions: [],
-  questionsPerLevel: 5,
+  questions: [],   
+  questionsPerLevel: 5,   
 
-  unit: 'm',
-  prefixRange: 'common',
+  unit: 'm',   
+  prefixRange: 'common',   
 
-  highScore: +localStorage.getItem('smart_lab_highscore') || 0,
-};
+  highScore: +localStorage.getItem('smart_lab_highscore') || 0, 
+};  
 
-/*-----------------------------
- جدول البادئات (مناسب للتعليم)
-------------------------------*/
-const PREFIXES = [
-  { name:'pico',  symbol:'p',  exp:-12 },
-  { name:'nano',  symbol:'n',  exp:-9  },
-  { name:'micro', symbol:'µ',  exp:-6  },
-  { name:'milli', symbol:'m',  exp:-3  },
-  { name:'centi', symbol:'c',  exp:-2  },
-  { name:'deci',  symbol:'d',  exp:-1  },
-  { name:'',      symbol:'',   exp:0   },
-  { name:'kilo',  symbol:'k',  exp:3   },
-  { name:'mega',  symbol:'M',  exp:6   },
-  { name:'giga',  symbol:'G',  exp:9   },
-  { name:'tera',  symbol:'T',  exp:12  },
-];
+/*-----------------------------  جدول البادئات ------------------------------*/ 
+const PREFIXES = [   
+  { name:'pico',  symbol:'p',  exp:-12 },   
+  { name:'nano',  symbol:'n',  exp:-9  },   
+  { name:'micro', symbol:'µ',  exp:-6  },   
+  { name:'milli', symbol:'m',  exp:-3  },   
+  { name:'centi', symbol:'c',  exp:-2  },   
+  { name:'deci',  symbol:'d',  exp:-1 },   
+  { name:'',      symbol:'',   exp:0   },   
+  { name:'kilo',  symbol:'k',  exp:3   },   
+  { name:'mega',  symbol:'M',  exp:6   },   
+  { name:'giga',  symbol:'G',  exp:9   },   
+  { name:'tera',  symbol:'T',  exp:12  }, 
+];  
 
-/*-----------------------------
- تحديد مجموعة البادئات
-------------------------------*/
-function getPrefixPool(range){
-  if(range === 'common')
-    return PREFIXES.filter(p => [-3,-2,0,3,6,9].includes(p.exp));
+/*-----------------------------  تحديد مجموعة البادئات ------------------------------*/ 
+function getPrefixPool(range){   
+  if(range === 'common')     
+    return PREFIXES.filter(p => [-3,-2,0,3,6,9].includes(p.exp));    
 
-  if(range === 'extended')
-    return PREFIXES.filter(p => [-9,-6,-3,-2,0,3,6,9,12].includes(p.exp));
+  if(range === 'extended')     
+    return PREFIXES.filter(p => [-9,-6,-3,-2,0,3,6,9,12].includes(p.exp));    
 
-  return PREFIXES; // كاملة
-}
+  return PREFIXES; // كاملة 
+}  
 
-/*-----------------------------
- مؤثرات صوتية (بدون ملفات)
-------------------------------*/
-function beep(type='success'){
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
+/*-----------------------------  مؤثرات صوتية ------------------------------*/ 
+function beep(type='success'){   
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();   
+  const osc = ctx.createOscillator();   
+  const gain = ctx.createGain();    
 
-  osc.type = "sine";
-  osc.frequency.value = (type === 'success') ? 900 :
-                        (type === 'error')   ? 220 : 440;
+  osc.type = "sine";   
+  osc.frequency.value = (type === 'success') ? 900 : (type === 'error') ? 220 : 440;    
 
-  osc.connect(gain);
-  gain.connect(ctx.destination);
+  osc.connect(gain);   
+  gain.connect(ctx.destination);    
 
-  gain.gain.setValueAtTime(0.001, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.01);
+  gain.gain.setValueAtTime(0.001, ctx.currentTime);   
+  gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.01);    
 
-  osc.start();
-  osc.stop(ctx.currentTime + 0.18);
-}
+  osc.start();   
+  osc.stop(ctx.currentTime + 0.18); 
+}  
 
-/*-------------------------------------
- مؤثر صوتي خاص بنهاية المستويات
---------------------------------------*/
-function activatePulse(){
-  const ctx = new (window.AudioContext||window.webkitAudioContext)();
-  const o = ctx.createOscillator();
-  const g = ctx.createGain();
+function activatePulse(){   
+  const ctx = new (window.AudioContext||window.webkitAudioContext)();   
+  const o = ctx.createOscillator();   
+  const g = ctx.createGain();    
 
-  o.type = "triangle";
-  o.frequency.setValueAtTime(440, ctx.currentTime);
-  o.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.4);
+  o.type = "triangle";   
+  o.frequency.setValueAtTime(440, ctx.currentTime);   
+  o.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.4);    
 
-  o.connect(g);
-  g.connect(ctx.destination);
+  o.connect(g);   
+  g.connect(ctx.destination);    
 
-  g.gain.setValueAtTime(0.001, ctx.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.05);
+  g.gain.setValueAtTime(0.001, ctx.currentTime);   
+  g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.05);    
 
-  o.start();
-  o.stop(ctx.currentTime + 0.45);
-}
+  o.start();   
+  o.stop(ctx.currentTime + 0.45); 
+}  
 
-/*-----------------------------
- أدوات مساعدة
-------------------------------*/
-const rnd = (min,max)=> Math.floor(Math.random()*(max-min+1))+min;
+/*-----------------------------  أدوات مساعدة ------------------------------*/ 
+const rnd = (min,max)=> Math.floor(Math.random()*(max-min+1))+min;  
+function pick(arr) { return arr[Math.floor(Math.random()*arr.length)]; }  
+function fmt(x){   
+  const abs = Math.abs(x);   
+  if(abs !== 0 && (abs < 1e-3 || abs >= 1e6))     
+    return x.toExponential(2).replace('+','');    
+  return (+x.toFixed(6)).toString(); 
+}  
 
-function pick(arr) {
-  return arr[Math.floor(Math.random()*arr.length)];
-}
+/*-----------------------------  صنع سؤال جديد ------------------------------*/ 
+function makeQuestion(pool, unit, level){   
+  const p1 = pick(pool);   
+  let p2 = pick(pool);    
+  while(p1.exp === p2.exp) p2 = pick(pool);    
 
-function fmt(x){
-  const abs = Math.abs(x);
-  if(abs !== 0 && (abs < 1e-3 || abs >= 1e6))
-    return x.toExponential(2).replace('+','');
+  const baseVal = (level === 1) ? rnd(2,900)/10 : (level === 2) ? rnd(5,900) : rnd(50,5000);    
+  const v_base = baseVal * Math.pow(10, p1.exp);   
+  const correct = v_base / Math.pow(10, p2.exp);    
 
-  return (+x.toFixed(6)).toString();
-}
+  const qText = `<b>${fmt(baseVal)} ${p1.symbol}${unit}</b> → <b>${p2.symbol}${unit}</b>`;   
+  const correctAns = fmt(correct);    
 
-/*-----------------------------
- صنع سؤال جديد
-------------------------------*/
-function makeQuestion(pool, unit, level){
-  const p1 = pick(pool);
-  let p2 = pick(pool);
+  const wrong1 = fmt(correct * Math.pow(10, rnd(-2,2))); 
+  const wrong2 = fmt(baseVal);                           
+  const wrong3 = fmt(v_base);                            
 
-  while(p1.exp === p2.exp) p2 = pick(pool);
+  let options = [correctAns, wrong1, wrong2, wrong3];   
+  options = Array.from(new Set(options));   
+  while(options.length < 4){     
+    options.push(fmt(correct * Math.pow(10, rnd(-3,3))));   
+  }   
+  options.sort(()=>Math.random()-0.5);    
 
-  const baseVal =
-    (level === 1) ? rnd(2,900)/10 :
-    (level === 2) ? rnd(5,900)   :
-                    rnd(50,5000);
+  const explain = `     <div>فرق الأسس: Δ = (${p1.exp}) − (${p2.exp}) = <b>${p1.exp - p2.exp}</b></div>     <div>${fmt(baseVal)} × 10<sup>${p1.exp}</sup> = ${fmt(correct)} ${p2.symbol}${unit}</div>`;    
 
-  const v_base = baseVal * Math.pow(10, p1.exp);
-  const correct = v_base / Math.pow(10, p2.exp);
+  return { text: qText, options, answer: correctAns, explain, meta: { from:p1, to:p2, baseVal, correct } }; 
+}  
 
-  const qText = `حوِّل <b>${fmt(baseVal)} ${p1.symbol}${unit}</b> إلى <b>${p2.symbol}${unit}</b>.`;
-  const correctAns = fmt(correct);
+/*-----------------------------  بناء مستوى ------------------------------*/ 
+function buildLevel(level){   
+  const pool = getPrefixPool(Game.prefixRange);   
+  const qs = [];    
 
-  // مشتّتات شائعة
-  const wrong1 = fmt(correct * Math.pow(10, rnd(-2,2))); // تحريك خاطئ للفاصلة
-  const wrong2 = fmt(baseVal);                           // نسيان البادئات
-  const wrong3 = fmt(v_base);                            // تحويل إلى الأساس فقط
+  while(qs.length < Game.questionsPerLevel){     
+    const q = makeQuestion(pool, Game.unit, level);     
+    const delta = Math.abs(q.meta.from.exp - q.meta.to.exp);      
 
-  let options = [correctAns, wrong1, wrong2, wrong3];
-  options = Array.from(new Set(options));
-  while(options.length < 4){
-    options.push(fmt(correct * Math.pow(10, rnd(-3,3))));
-  }
-  options.sort(()=>Math.random()-0.5);
+    if(level === 1 && delta <= 3) qs.push(q);     
+    else if(level === 2 && delta >= 3 && delta <= 9) qs.push(q);     
+    else if(level === 3 && delta >= 6) qs.push(q);   
+  }   
+  return qs; 
+}  
 
-  const explain = `
-    <div>فرق الأسس: Δ = (${p1.exp}) − (${p2.exp}) = <b>${p1.exp - p2.exp}</b></div>
-    <div>${fmt(baseVal)} × 10<sup>${p1.exp}</sup> = ${fmt(correct)} ${p2.symbol}${unit}</div>
-  `;
-
-  return {
-    text: qText,
-    options,
-    answer: correctAns,
-    explain,
-    meta: { from:p1, to:p2, baseVal, correct }
-  };
-}
-
-/*-----------------------------
- بناء مستوى كامل
-------------------------------*/
-function buildLevel(level){
-  const pool = getPrefixPool(Game.prefixRange);
-  const qs = [];
-
-  while(qs.length < Game.questionsPerLevel){
-    const q = makeQuestion(pool, Game.unit, level);
-    const delta = Math.abs(q.meta.from.exp - q.meta.to.exp);
-
-    if(level === 1 && delta <= 3) qs.push(q);
-    else if(level === 2 && delta >= 3 && delta <= 9) qs.push(q);
-    else if(level === 3 && delta >= 6) qs.push(q);
-  }
-  return qs;
-}
-
-/*-----------------------------
- المؤقت
-------------------------------*/
+/*-----------------------------  المؤقت ------------------------------*/ 
 function startTimer(seconds){
-  Game.timeLeft = seconds;
-  ui.time.textContent = Game.timeLeft;
-
-  clearInterval(Game.timerId);
-
-  Game.timerId = setInterval(()=>{
-    Game.timeLeft--;
+    Game.timeLeft = seconds;
     ui.time.textContent = Game.timeLeft;
+    clearInterval(Game.timerId);
 
-    if(Game.timeLeft <= 0){
-      clearInterval(Game.timerId);
-      endLevel(false, 'انتهى الوقت!');
+    Game.timerId = setInterval(()=>{
+        Game.timeLeft--;
+        ui.time.textContent = Game.timeLeft;
+
+        if(Game.timeLeft <= 0){
+            clearInterval(Game.timerId);
+            endLevel(false, 'انتهى الوقت!');
+        }
+    }, 1000);
+}
+
+/*-----------------------------  بدء اللعبة ------------------------------*/ 
+function startGame(){ 
+    const studentName = ui.studentInput.value.trim();
+    if(!studentName){
+        alert('✍️ الرجاء إدخال الاسم قبل بدء اللعبة!');
+        return;
     }
-  }, 1000);
-}
 
-/*-----------------------------
- بدء اللعبة
-------------------------------*/
-function startGame(){
-  Game.level = 1;
-  Game.score = 0;
+    Game.level = 1;
+    Game.score = 0;    
+    Game.unit = ui.unitSelect.value;   
+    Game.prefixRange = ui.rangeSelect.value;   
+    Game.questionsPerLevel = Math.max(3, Math.min(12, +ui.qPerLevel.value || 5));    
 
-  Game.unit = ui.unitSelect.value;
-  Game.prefixRange = ui.rangeSelect.value;
-  Game.questionsPerLevel = Math.max(3, Math.min(12, +ui.qPerLevel.value || 5));
+    swapScreen('game');   
+    ui.level.textContent = Game.level;   
+    ui.score.textContent = Game.score;    
 
-  swapScreen('game');
-  ui.level.textContent = Game.level;
-  ui.score.textContent = Game.score;
+    loadLevel(); 
+}  
 
-  loadLevel();
-}
-
-/*-----------------------------
- تحميل مستوى
-------------------------------*/
+/*-----------------------------  تحميل مستوى ------------------------------*/ 
 function loadLevel(){
-  const timeByLevel = [60, 55, 50];
+    const baseTime = 120;
+    const timeByLevel = Math.max(baseTime - (Game.level-1)*5, 5);
 
-  Game.questions = buildLevel(Game.level);
-  Game.asked = 0;
+    Game.questions = buildLevel(Game.level);
+    Game.asked = 0;
+    Game.errors = 0;
 
-  startTimer(timeByLevel[Game.level-1] || 60);
-  askNext();
+    startTimer(timeByLevel);
+    askNext();
 }
 
-/*-----------------------------
- عرض سؤال جديد
-------------------------------*/
-function askNext(){
-  ui.feedback.innerHTML = '';
+/*-----------------------------  عرض سؤال جديد ------------------------------*/ 
+function askNext(){   
+    ui.feedback.innerHTML = '';    
+    const q = Game.questions[Game.asked];   
+    if(!q){     
+        endLevel(true, "أحسنت! أنهيت جميع أسئلة هذا المستوى.");     
+        return;   
+    }    
 
-  const q = Game.questions[Game.asked];
-  if(!q){
-    endLevel(true, "أحسنت! أنهيت جميع أسئلة هذا المستوى.");
-    return;
-  }
+    ui.qText.innerHTML = q.text;   
+    ui.qText.style.fontWeight = 'bold'; // سؤال غامق
+    ui.choices.innerHTML = '';    
 
-  ui.qText.innerHTML = q.text;
-  ui.choices.innerHTML = '';
+    q.options.forEach(opt=>{
+        const btn = document.createElement('button');
+        btn.className = 'choice';
+        btn.textContent = opt;
+        btn.style.fontSize = '1.2em'; // خيارات أكبر
+        btn.style.padding = '12px 24px';
+        btn.addEventListener('click', ()=> handleAnswer(btn, q));
+        ui.choices.appendChild(btn);
+    });    
 
-  q.options.forEach(opt=>{
-    const btn = document.createElement('button');
-    btn.className = 'choice';
-    btn.textContent = opt;
+    const pct = Math.round((Game.asked/Game.questions.length)*100);   
+    ui.progress.style.width = pct + '%'; 
+}  
 
-    btn.addEventListener('click', ()=> handleAnswer(btn, q));
-    ui.choices.appendChild(btn);
-  });
+/*-----------------------------  التحقق من الإجابة ------------------------------*/ 
+function handleAnswer(btn, q){   
+    $$('.choice').forEach(b=> b.disabled = true);    
 
-  const pct = Math.round((Game.asked/Game.questions.length)*100);
-  ui.progress.style.width = pct + '%';
-}
+    if(btn.textContent === q.answer){     
+        btn.classList.add('correct');     
+        beep('success');      
+        Game.score += 10 + Math.floor(Game.timeLeft/10);     
+        ui.score.textContent = Game.score;      
+        ui.feedback.innerHTML = '✔️ إجابة صحيحة!<br>' + q.explain;      
+        Game.asked++;     
+        setTimeout(askNext, 700);   
+    }   
+    else{     
+        btn.classList.add('wrong');     
+        beep('error');      
+        Game.errors++;
+        Game.timeLeft = Math.max(0, Game.timeLeft - 5);     
+        ui.time.textContent = Game.timeLeft;      
+        ui.feedback.innerHTML = `❌ ليست صحيحة — حاول/ي مجددًا<br>خطأ ${Game.errors} من 2<br>` + q.explain;      
 
-/*-----------------------------
- التحقق من الإجابة
-------------------------------*/
-function handleAnswer(btn, q){
-  $$('.choice').forEach(b=> b.disabled = true);
+        if(Game.errors >=2){
+            endLevel(false, 'لقد ارتكبت خطأين متتاليين!'); 
+            return;
+        }
 
-  if(btn.textContent === q.answer){
-    btn.classList.add('correct');
-    beep('success');
+        setTimeout(()=>{
+            $$('.choice').forEach(b=>{
+                if(!b.classList.contains('wrong')) b.disabled = false;
+            });
+        }, 300);   
+    } 
+}  
 
-    Game.score += 10 + Math.floor(Game.timeLeft/10);
-    ui.score.textContent = Game.score;
+/*-----------------------------  نهاية المستوى ------------------------------*/ 
+function endLevel(won, msg){   
+    clearInterval(Game.timerId);   
+    swapScreen('end');    
 
-    ui.feedback.innerHTML = '✔️ إجابة صحيحة!<br>' + q.explain;
+    if(won){     
+        ui.endTitle.textContent = (Game.level < Game.maxLevel) ? "ممتاز! أكملت المستوى." : "🎉 بطل/ة مختبر الفيزياء!";   
+    } else {     
+        ui.endTitle.textContent = "انتهى الوقت!";   
+    }    
 
-    Game.asked++;
-    setTimeout(askNext, 700);
-  }
-  else{
-    btn.classList.add('wrong');
-    beep('error');
+    ui.endSummary.innerHTML = `${msg}<br>نقاطك: <b>${Game.score}</b>`;    
+    ui.btnNext.style.display = (won && Game.level < Game.maxLevel) ? 'inline-block' : 'none';    
+    ui.btnCert.style.display = (won && Game.level === Game.maxLevel) ? 'inline-block' : 'none';    
+    activatePulse(); 
+}  
 
-    Game.timeLeft = Math.max(0, Game.timeLeft - 5);
-    ui.time.textContent = Game.timeLeft;
+/*-----------------------------  المستوى التالي ------------------------------*/ 
+function nextLevel(){   
+    Game.level++;   
+    if(Game.level > Game.maxLevel){     
+        restartGame();     
+        return;   
+    }   
+    swapScreen('game');   
+    ui.level.textContent = Game.level;   
+    loadLevel(); 
+}  
 
-    ui.feedback.innerHTML = '❌ ليست صحيحة — حاول/ي مجددًا<br>' + q.explain;
+/*-----------------------------  إعادة اللعبة ------------------------------*/ 
+function restartGame(){   
+    swapScreen('start'); 
+}  
 
-    setTimeout(()=>{
-      $$('.choice').forEach(b=>{
-        if(!b.classList.contains('wrong')) b.disabled = false;
-      });
-    }, 300);
-  }
-}
+/*-----------------------------  تبديل الشاشات ------------------------------*/ 
+function swapScreen(name){   
+    Object.values(screens).forEach(s=> s.classList.remove('active'));   
+    screens[name].classList.add('active'); 
+}  
 
-/*-----------------------------
- نهاية المستوى
-------------------------------*/
-function endLevel(won, msg){
-  clearInterval(Game.timerId);
-  swapScreen('end');
+/*-----------------------------  شهادة PDF ------------------------------*/ 
+function generateCertificate(student, score, time) {   
+    const { jsPDF } = window.jspdf;   
+    const doc = new jsPDF({ orientation: "landscape", unit: "px", format: "a4" });    
 
-  if(won){
-    ui.endTitle.textContent =
-      (Game.level < Game.maxLevel) ?
-      "ممتاز! أكملت المستوى." :
-      "🎉 بطل/ة مختبر الفيزياء!";
-  } else {
-    ui.endTitle.textContent = "انتهى الوقت!";
-  }
+    doc.setFillColor(15, 25, 55);   
+    doc.rect(0, 0, 842, 595, "F");    
 
-  ui.endSummary.innerHTML =
-    `${msg}<br>نقاطك: <b>${Game.score}</b>`;
+    doc.setTextColor("#3ddc97");   
+    doc.setFontSize(36);   
+    doc.text("شهادة إنجاز", 420, 80, { align: "center" });    
 
-  ui.btnNext.style.display =
-    (won && Game.level < Game.maxLevel) ? 'inline-block' : 'none';
+    doc.setTextColor("#ffffff");   
+    doc.setFontSize(18);   
+    doc.text("المدرسة: الثانوية الثانية مسارات بمكة المكرمة", 420, 115, { align: "center" });    
 
-  ui.btnCert.style.display =
-    (won && Game.level === Game.maxLevel) ? 'inline-block' : 'none';
+    doc.setFontSize(24);   
+    doc.text(`تشهد المعلمة بأن الطالب/ـة: ${student}`, 420, 170, { align: "center" });    
 
-  activatePulse();
-}
+    doc.setFontSize(18);   
+    doc.text(`أتم/ت لعبة "التحويل الذكي" الخاصة بتحويل البادئات الفيزيائية.`, 420, 220, { align: "center" });   
+    doc.text(`مجموع النقاط: ${score}`, 420, 255, { align: "center" });   
+    doc.text(`الوقت المتبقي عند الإنهاء: ${time} ثانية`, 420, 285, { align: "center" });    
 
-/*-----------------------------
- المستوى التالي
-------------------------------*/
-function nextLevel(){
-  Game.level++;
-  if(Game.level > Game.maxLevel){
-    restartGame();
-    return;
-  }
-  swapScreen('game');
-  ui.level.textContent = Game.level;
-  loadLevel();
-}
+    doc.setDrawColor("#3ddc97");   
+    doc.setLineWidth(2);   
+    doc.line(200, 310, 640, 310);    
 
-/*-----------------------------
- إعادة اللعبة
-------------------------------*/
-function restartGame(){
-  swapScreen('start');
-}
+    doc.setFontSize(18);   
+    doc.text("معلمتكم: إيمان الزهراني", 420, 350, { align: "center" });    
 
-/*-----------------------------
- تبديل الشاشات
-------------------------------*/
-function swapScreen(name){
-  Object.values(screens).forEach(s=> s.classList.remove('active'));
-  screens[name].classList.add('active');
-}
+    doc.save(`شهادة-${student}.pdf`); 
+}  
 
-/*-----------------------------
- شهادة PDF
-------------------------------*/
-function generateCertificate(student, score, time) {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({
-    orientation: "landscape",
-    unit: "px",
-    format: "a4",
-  });
-
-  // خلفية
-  doc.setFillColor(15, 25, 55);
-  doc.rect(0, 0, 842, 595, "F");
-
-  // عنوان
-  doc.setTextColor("#3ddc97");
-  doc.setFontSize(36);
-  doc.text("شهادة إنجاز", 420, 80, { align: "center" });
-
-  // اسم المدرسة
-  doc.setTextColor("#ffffff");
-  doc.setFontSize(18);
-  doc.text("المدرسة: الثانوية الثانية مسارات بمكة المكرمة", 420, 115, { align: "center" });
-
-  // اسم الطالب
-  doc.setFontSize(24);
-  doc.text(`تشهد المعلمة بأن الطالب/ـة: ${student}`, 420, 170, { align: "center" });
-
-  // تفاصيل الإنجاز
-  doc.setFontSize(18);
-  doc.text(`أتم/ت لعبة "التحويل الذكي" الخاصة بتحويل البادئات الفيزيائية.`, 420, 220, { align: "center" });
-  doc.text(`مجموع النقاط: ${score}`, 420, 255, { align: "center" });
-  doc.text(`الوقت المتبقي عند الإنهاء: ${time} ثانية`, 420, 285, { align: "center" });
-
-  // خط زخرفي
-  doc.setDrawColor("#3ddc97");
-  doc.setLineWidth(2);
-  doc.line(200, 310, 640, 310);
-
-  // توقيع
-  doc.setFontSize(18);
-  doc.text("معلمتكم: إيمان الزهراني", 420, 350, { align: "center" });
-
-  // حفظ
-  doc.save(`شهادة-${student}.pdf`);
-}
-
-/*-----------------------------
- تفعيل زر الشهادة
-------------------------------*/
+/*-----------------------------  تفعيل زر الشهادة ------------------------------*/ 
 ui.btnCert.addEventListener('click', ()=>{
-  const student = $('#student-name').value || "طالب";
-  generateCertificate(student, Game.score, Game.timeLeft);
-});
+    const student = ui.studentInput.value.trim() || "طالب";
+    generateCertificate(student, Game.score, Game.timeLeft);
+});  
 
-/*-----------------------------
- ربط الأزرار
-------------------------------*/
-ui.btnStart.addEventListener('click', startGame);
-ui.btnNext.addEventListener('click', nextLevel);
+/*-----------------------------  ربط الأزرار ------------------------------*/ 
+ui.btnStart.addEventListener('click', startGame); 
+ui.btnNext.addEventListener('click', nextLevel); 
 ui.btnRestart.addEventListener('click', restartGame);
+
+
 
