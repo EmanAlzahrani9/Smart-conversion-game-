@@ -97,16 +97,72 @@ input,select{
 }
 
 /* أزرار */
-.primary, .ghost{
-  padding:12px 18px;
+button, .primary, .ghost{
+  padding:14px 22px;
   font-weight:700;
   cursor:pointer;
   border-radius:12px;
   border:none;
+  font-size:1.2em;
+  margin:4px;
+  transition: transform 0.1s;
 }
+button:hover, .primary:hover, .ghost:hover{
+  transform: scale(1.05);
+}
+
 .primary{ background:var(--accent); color:#03140c }
 .ghost{ background:transparent; border:1px solid var(--subtext); color:var(--text) }
 
 /* الهيدَر */
 .hud{
-  position:
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:16px;
+  font-size:1.1em;
+}
+.hud div{ padding:4px 8px; background:var(--lab-glass); border-radius:6px; }
+
+/* نص السؤال داخل اللعبة */
+#question-text {
+    font-weight: bold; /* السؤال غامق */
+    font-size:1.25em;   /* حجم مناسب للقراءة */
+    margin-bottom:16px;
+}
+
+/* خيارات الإجابة */
+#choices{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+#choices button{
+    background:var(--lab-blue);
+    color:var(--text);
+    border:1px solid rgba(255,255,255,0.1);
+    box-shadow:0 0 10px rgba(0,255,170,0.2);
+}
+
+/* تلميحات وردود الفعل */
+#feedback{
+    margin-top:12px;
+    min-height:48px;
+    line-height:1.4;
+}
+
+/* شريط التقدم */
+#progress-bar{
+    height:12px;
+    background:var(--accent);
+    border-radius:6px;
+    margin-top:12px;
+}
+
+/* شاشات النهاية */
+#end-summary{
+    font-size:1.1em;
+    margin-top:12px;
+}
+#btn-next-level, #btn-restart, #btn-certificate{
+    display:inline-block;
+}
