@@ -44,7 +44,7 @@ const Game = {
   timeLeft: 60,   
   timerId: null,   
   asked: 0,   
-  errors: 0, // عداد الأخطاء   
+  levelErrors: 0, // عداد الأخطاء لكل مستوى   
 
   questions: [],   
   questionsPerLevel: 5,   
@@ -219,7 +219,7 @@ function loadLevel(){
 
     Game.questions = buildLevel(Game.level);
     Game.asked = 0;
-    Game.errors = 0;
+    Game.levelErrors = 0;
 
     startTimer(timeByLevel);
     askNext();
@@ -268,13 +268,13 @@ function handleAnswer(btn, q){
     else{     
         btn.classList.add('wrong');     
         beep('error');      
-        Game.errors++;
+        Game.levelErrors++; // زيادة الأخطاء في المستوى الحالي
         Game.timeLeft = Math.max(0, Game.timeLeft - 5);     
         ui.time.textContent = Game.timeLeft;      
-        ui.feedback.innerHTML = `❌ ليست صحيحة — حاول/ي مجددًا<br>خطأ ${Game.errors} من 2<br>` + q.explain;      
+        ui.feedback.innerHTML = `❌ ليست صحيحة — حاول/ي مجددًا<br>خطأ ${Game.levelErrors} من 2<br>` + q.explain;      
 
-        if(Game.errors >=2){
-            endLevel(false, 'لقد ارتكبت خطأين متتاليين!'); 
+        if(Game.levelErrors >=2){
+            endLevel(false, 'لقد ارتكبت خطأين في هذا المستوى!'); 
             return;
         }
 
@@ -294,7 +294,7 @@ function endLevel(won, msg){
     if(won){     
         ui.endTitle.textContent = (Game.level < Game.maxLevel) ? "ممتاز! أكملت المستوى." : "🎉 بطل/ة مختبر الفيزياء!";   
     } else {     
-        ui.endTitle.textContent = "انتهى الوقت!";   
+        ui.endTitle.textContent = "انتهى المستوى!";   
     }    
 
     ui.endSummary.innerHTML = `${msg}<br>نقاطك: <b>${Game.score}</b>`;    
@@ -370,6 +370,3 @@ ui.btnCert.addEventListener('click', ()=>{
 ui.btnStart.addEventListener('click', startGame); 
 ui.btnNext.addEventListener('click', nextLevel); 
 ui.btnRestart.addEventListener('click', restartGame);
-
-
-
