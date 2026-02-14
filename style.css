@@ -157,6 +157,18 @@ button:hover, .primary:hover, .ghost:hover{
     border-radius:6px;
     margin-top:12px;
 }
+#top10{
+  margin-top:20px;
+  background:rgba(0,0,0,0.3);
+  padding:12px;
+  border-radius:12px;
+}
+
+#top10-list li{
+  margin:4px 0;
+  font-weight:bold;
+}
+
 
 /* شاشات النهاية */
 #end-summary{
@@ -166,3 +178,4 @@ button:hover, .primary:hover, .ghost:hover{
 #btn-next-level, #btn-restart, #btn-certificate{
     display:inline-block;
 }
+
