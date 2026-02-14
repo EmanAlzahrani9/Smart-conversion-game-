@@ -358,6 +358,26 @@ function generateCertificate(student, score, time) {
     doc.text("معلمتكم: إيمان الزهراني", 420, 350, { align: "center" });    
 
     doc.save(`شهادة-${student}.pdf`); 
+  function saveToTop10(name, score){
+    let top10 = JSON.parse(localStorage.getItem('smart_top10')) || [];
+    top10.push({ name, score });
+    top10.sort((a,b) => b.score - a.score);
+    top10 = top10.slice(0,10);
+    localStorage.setItem('smart_top10', JSON.stringify(top10));
+}
+
+function renderTop10(){
+    const list = document.getElementById('top10-list');
+    if(!list) return;
+    const top10 = JSON.parse(localStorage.getItem('smart_top10')) || [];
+    list.innerHTML = '';
+    top10.forEach(p=>{
+        const li = document.createElement('li');
+        li.textContent = `${p.name} - ${p.score} نقطة`;
+        list.appendChild(li);
+    });
+}
+
 }  
 
 /*-----------------------------  تفعيل زر الشهادة ------------------------------*/ 
@@ -370,3 +390,4 @@ ui.btnCert.addEventListener('click', ()=>{
 ui.btnStart.addEventListener('click', startGame); 
 ui.btnNext.addEventListener('click', nextLevel); 
 ui.btnRestart.addEventListener('click', restartGame);
+
