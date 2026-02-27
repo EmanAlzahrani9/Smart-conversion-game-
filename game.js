@@ -365,6 +365,67 @@ function generateCertificate(student, score, time) {
     top10 = top10.slice(0,10);
     localStorage.setItem('smart_top10', JSON.stringify(top10));
 }
+  /*=================  حفظ البيانات  =================*/
+
+// حفظ كل النتائج (لأعلى 20 سكور)
+function saveScore(name, score){
+    let scores = JSON.parse(localStorage.getItem('all_scores')) || [];
+    scores.push({ name, score });
+    localStorage.setItem('all_scores', JSON.stringify(scores));
+}
+
+
+/*=================  أعلى 20 سكور  =================*/
+
+function renderTopScores(){
+    const list = document.getElementById('topScores-list');
+    if(!list) return;
+
+    let scores = JSON.parse(localStorage.getItem('all_scores')) || [];
+
+    scores.sort((a,b)=> b.score - a.score);
+    scores = scores.slice(0,20);
+
+    list.innerHTML = '';
+    scores.forEach(p=>{
+        const li = document.createElement('li');
+        li.textContent = `${p.name} - ${p.score} نقطة`;
+        list.appendChild(li);
+    });
+}
+
+
+/*=================  أفضل 20 لاعب (بدون تكرار)  =================*/
+
+function renderTopPlayers(){
+    const list = document.getElementById('topPlayers-list');
+    if(!list) return;
+
+    let scores = JSON.parse(localStorage.getItem('all_scores')) || [];
+
+    // نجمع أعلى نتيجة لكل لاعب
+    let bestPerPlayer = {};
+
+    scores.forEach(p=>{
+        if(!bestPerPlayer[p.name] || p.score > bestPerPlayer[p.name]){
+            bestPerPlayer[p.name] = p.score;
+        }
+    });
+
+    let playersArray = Object.keys(bestPerPlayer).map(name=>{
+        return { name, score: bestPerPlayer[name] };
+    });
+
+    playersArray.sort((a,b)=> b.score - a.score);
+    playersArray = playersArray.slice(0,20);
+
+    list.innerHTML = '';
+    playersArray.forEach(p=>{
+        const li = document.createElement('li');
+        li.textContent = `${p.name} - ${p.score} نقطة`;
+        list.appendChild(li);
+    });
+}
 
 function renderTop10(){
     const list = document.getElementById('top10-list');
@@ -390,4 +451,5 @@ ui.btnCert.addEventListener('click', ()=>{
 ui.btnStart.addEventListener('click', startGame); 
 ui.btnNext.addEventListener('click', nextLevel); 
 ui.btnRestart.addEventListener('click', restartGame);
+
 
