@@ -142,18 +142,33 @@ function makeQuestion(pool, unit, level){
   const qText = `<b>${fmt(baseVal)} ${p1.symbol}${unit}</b> → <b>${p2.symbol}${unit}</b>`;   
   const correctAns = fmt(correct);    
 
-  const wrong1 = fmt(correct * Math.pow(10, rnd(-2,2))); 
-  const wrong2 = fmt(baseVal);                           
-  const wrong3 = fmt(v_base);                            
+  // توليد خيارات خاطئة مضمونة التفرد
+  const usedExps = new Set([0]); // 0 = نفس الإجابة الصحيحة
+  const wrongOptions = [];
+  const expCandidates = [-6,-5,-4,-3,-2,-1,1,2,3,4,5,6];
 
-  let options = [correctAns, wrong1, wrong2, wrong3];   
-  options = Array.from(new Set(options));   
-  while(options.length < 4){     
-    options.push(fmt(correct * Math.pow(10, rnd(-3,3))));   
-  }   
+  for(const e of expCandidates.sort(()=>Math.random()-0.5)){
+    if(wrongOptions.length >= 3) break;
+    if(usedExps.has(e)) continue;
+    const val = fmt(correct * Math.pow(10, e));
+    if(val !== correctAns && !wrongOptions.includes(val)){
+      wrongOptions.push(val);
+      usedExps.add(e);
+    }
+  }
+
+  // احتياطي إذا ما اكتملت الخيارات
+  let fallbackMult = 10;
+  while(wrongOptions.length < 3){
+    const val = fmt(correct * fallbackMult);
+    if(val !== correctAns && !wrongOptions.includes(val)) wrongOptions.push(val);
+    fallbackMult *= 10;
+  }
+
+  let options = [correctAns, ...wrongOptions];
   options.sort(()=>Math.random()-0.5);    
 
-  const explain = `     <div>فرق الأسس: Δ = (${p1.exp}) − (${p2.exp}) = <b>${p1.exp - p2.exp}</b></div>     <div>${fmt(baseVal)} × 10<sup>${p1.exp}</sup> = ${fmt(correct)} ${p2.symbol}${unit}</div>`;    
+  const explain = `<div>فرق الأسس: Δ = (${p1.exp}) − (${p2.exp}) = <b>${p1.exp - p2.exp}</b></div><div>${fmt(baseVal)} × 10<sup>${p1.exp}</sup> = ${fmt(correct)} ${p2.symbol}${unit}</div>`;    
 
   return { text: qText, options, answer: correctAns, explain, meta: { from:p1, to:p2, baseVal, correct } }; 
 }  
