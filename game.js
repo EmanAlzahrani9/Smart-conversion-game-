@@ -301,6 +301,12 @@ function endLevel(won, msg){
     ui.btnNext.style.display = (won && Game.level < Game.maxLevel) ? 'inline-block' : 'none';    
     ui.btnCert.style.display = (won && Game.level === Game.maxLevel) ? 'inline-block' : 'none';    
     activatePulse(); 
+  const playerName = ui.studentInput.value.trim() || "طالب";
+
+saveScore(playerName, Game.score);
+renderTopScores();
+renderTopPlayers();
+  
 }  
 
 /*-----------------------------  المستوى التالي ------------------------------*/ 
@@ -451,5 +457,6 @@ ui.btnCert.addEventListener('click', ()=>{
 ui.btnStart.addEventListener('click', startGame); 
 ui.btnNext.addEventListener('click', nextLevel); 
 ui.btnRestart.addEventListener('click', restartGame);
+
 
 
