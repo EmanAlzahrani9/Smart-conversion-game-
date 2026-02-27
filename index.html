@@ -12,52 +12,27 @@
           crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
   <style>
-    /* حجم الصور */
-    .lab-logo { width: 180px; height: auto; display: block; margin: 0 auto 10px auto; }
-    .lab-tubes { width: 200px; height: auto; display: block; margin: 10px auto; transition: transform 0.3s ease; }
-    .hero { width: 150px; height: auto; display: block; margin: 0 auto; }
-
-    /* Canvas الخلفية */
-    #backgroundCanvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: -1;
-      width: 100%;
-      height: 100%;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: "Cairo", sans-serif;
-      text-align: center;
-      position: relative;
-      overflow-x: hidden;
-    }
+    body{margin:0;padding:0;font-family:"Cairo",sans-serif;text-align:center;position:relative;overflow-x:hidden;background:#0a0f1f;color:white}
+    .card{background:#0f1833;max-width:600px;margin:50px auto;padding:20px;border-radius:15px}
+    input, select{width:100%;padding:10px;margin:6px 0;border-radius:10px;border:none;background:#101833;color:white;font-size:16px}
+    button{padding:12px 18px;margin:6px;font-size:18px;border-radius:10px;border:none;cursor:pointer}
+    .primary{background:#3ddc97;color:#03140c}
+    .ghost{background:transparent;border:1px solid #9ab0ff;color:white}
+    #question-text{font-weight:bold;font-size:22px;margin-bottom:20px}
+    .screen{display:none;padding:10px;min-height:100vh}
+    .screen.active{display:block}
+    #topPlayers,#topScores{margin-top:20px;background:rgba(0,0,0,0.3);padding:12px;border-radius:12px;text-align:right}
+    #topPlayers-list li,#topScores-list li{margin:4px 0;font-weight:bold}
   </style>
 </head>
 <body>
 
-<!-- Canvas الخلفية -->
-<canvas id="backgroundCanvas"></canvas>
-
 <!-- شاشة البداية -->
 <section id="start-screen" class="screen active">
   <div class="card">
-    <img class="lab-logo"
-         src="https://media.istockphoto.com/id/1001264912/vector/science-lab-design.jpg?s=612x612&w=0&k=20&c=-cw9gaAzkDaRkjnr3_XaRko1tXnqt0Zfbmx3qPzRX1c="
-         alt="شعار مختبر الفيزياء">
-
     <h1>التحويل الذكي</h1>
     <p class="subtitle">مغامرة في مختبر الفيزياء</p>
-
-    <p class="lab-story">
-      ⚠️ <b>تنبيه مختبر الفيزياء</b> ⚠️<br>
-      جهاز تحويل البادئات معطّل! مهمتك إصلاحه عبر تحويل البادئات بشكل صحيح لإنقاذ التجربة.
-    </p>
-
-    <label>اسم الطالب/الطالبة:</label>
+    <label>اسم الطالب/ة:</label>
     <input id="student-name" type="text" placeholder="اكتب اسمك هنا">
 
     <label>اختر الوحدة:</label>
@@ -78,157 +53,130 @@
     <label>عدد الأسئلة في المستوى:</label>
     <input id="questions-per-level" type="number" value="5" min="3" max="12">
 
-    <img class="lab-tubes"
-         src="https://png.pngtree.com/png-vector/20260205/ourmid/pngtree-chemistry-laboratory-illustration-png-image_18695553.webp"
-         alt="أنابيب اختبار مختبرية">
-
-    <button id="btn-start" class="primary">ابدأ إصلاح الجهاز</button>
+    <button id="btn-start" class="primary">ابدأ اللعبة</button>
   </div>
 </section>
 
 <!-- شاشة اللعبة -->
 <section id="game-screen" class="screen">
-  <header class="hud">
-    <div class="hud-item">المستوى: <span id="level">1</span>/3</div>
-    <div class="hud-item">النقاط: <span id="score">0</span></div>
-    <div class="hud-item">الوقت: <span id="time">60</span>s</div>
-    <div class="progress-wrap">
-      <div class="progress" id="progress-bar"></div>
-    </div>
-  </header>
-
-  <main class="play-area">
-    <div class="scene">
-      <div class="bg"></div>
-      <img class="hero"
-           src="https://img.freepik.com/free-vector/girl-lab-gown-white_1308-38674.jpg?semt=ais_hybrid&w=740&q=80"
-           alt="شخصية عالِمة في المختبر">
-    </div>
-
-    <div class="panel">
-      <h2 id="question-text">...</h2>
-      <div id="choices" class="choices"></div>
-      <div id="feedback" class="feedback"></div>
-    </div>
-  </main>
+  <div class="card">
+    <h2 id="question-text">...</h2>
+    <div id="choices"></div>
+    <div id="feedback"></div>
+    <p>النقاط: <span id="score">0</span></p>
+    <p>المستوى: <span id="level">1</span></p>
+    <p>الوقت: <span id="time">60</span>s</p>
+    <button id="btn-next-level" class="primary">المستوى التالي</button>
+    <button id="btn-restart" class="ghost">إعادة اللعب</button>
+  </div>
 </section>
 
 <!-- شاشة النهاية -->
 <section id="end-screen" class="screen">
   <div class="card">
-    <h2 id="end-title">أحسنت!</h2>
+    <h2 id="end-title">🎉 انتهت اللعبة!</h2>
     <p id="end-summary"></p>
 
-    <button id="btn-next-level" class="primary">المستوى التالي</button>
-    <button id="btn-restart" class="ghost">إعادة اللعب</button>
+    <label>اسم الطالب/ة:</label>
+    <input id="student-name-end" type="text" placeholder="اكتب اسمك هنا">
 
-    <br><br>
-    <button id="btn-certificate" class="primary" style="display:none;">📄 تحميل شهادة الإنجاز</button>
+    <button id="btn-certificate" class="primary">📄 تحميل الشهادة</button>
+
+    <div id="topPlayers">
+      <h3>🏆 أفضل 20 لاعب</h3>
+      <ol id="topPlayers-list"></ol>
+    </div>
+
+    
+
+    <button id="btn-restart-end" class="ghost">إعادة اللعب</button>
   </div>
 </section>
-  
-  <div id="topPlayers">
-  <h3>🏆 أفضل 20 لاعب</h3>
-  <ol id="topPlayers-list"></ol>
-</div>
 
-<div id="topScores">
-  <h3>🔥 أعلى 20 سكور</h3>
-  <ol id="topScores-list"></ol>
-</div>
-
-<footer class="credits">
-  © المدرسة: <b>الثانوية الثانية مسارات بمكة المكرمة</b> — بإشراف المعلمة: <b>إيمان الزهراني</b>
-</footer>
-
-<script src="game.js"></script>
-
-<!-- Canvas + تأثير التفاعل -->
 <script>
-  const canvas = document.getElementById('backgroundCanvas');
-  const ctx = canvas.getContext('2d');
+/*-------------------- البيانات الأساسية --------------------*/
+let Game = {score:0, level:1};
+const ui = {
+  studentNameStart: document.getElementById('student-name'),
+  studentNameEnd: document.getElementById('student-name-end'),
+  score: document.getElementById('score'),
+  level: document.getElementById('level'),
+  questionText: document.getElementById('question-text'),
+  choices: document.getElementById('choices'),
+  feedback: document.getElementById('feedback'),
+  endTitle: document.getElementById('end-title'),
+  endSummary: document.getElementById('end-summary')
+};
 
-  function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
+function swapScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+}
 
-  // الفقاعات
-  const bubbles = [];
-  const numBubbles = 30;
-  for (let i = 0; i < numBubbles; i++) {
-    bubbles.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      radius: 5 + Math.random() * 10,
-      speed: 0.5 + Math.random(),
-      color: `rgba(255,255,255,${0.3 + Math.random()*0.5})`
-    });
-  }
+/*-------------------- التوب 20 --------------------*/
+function saveScore(name, score){
+  let scores = JSON.parse(localStorage.getItem('all_scores')) || [];
+  scores.push({name,score});
+  localStorage.setItem('all_scores', JSON.stringify(scores));
+}
 
-  // زيادة سرعة الفقاعات عند الإجابة الصحيحة
-  let bubbleSpeedMultiplier = 1;
+function renderTopScores(){
+  const list = document.getElementById('topScores-list');
+  let scores = JSON.parse(localStorage.getItem('all_scores')) || [];
+  scores.sort((a,b)=>b.score-a.score);
+  scores = scores.slice(0,20);
+  list.innerHTML='';
+  scores.forEach(p=>{
+    const li=document.createElement('li');
+    li.textContent=`${p.name} - ${p.score} نقطة`;
+    list.appendChild(li);
+  });
+}
 
-  const labTubes = document.querySelector('.lab-tubes');
-
-  function drawBackground() {
-    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    gradient.addColorStop(0, '#c8e6c9');
-    gradient.addColorStop(1, '#b2ebf2');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // رسم الفقاعات
-    bubbles.forEach(b => {
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2);
-      ctx.fillStyle = b.color;
-      ctx.fill();
-    });
-  }
-
-  function updateBubbles() {
-    bubbles.forEach(b => {
-      b.y -= b.speed * bubbleSpeedMultiplier;
-      if (b.y + b.radius < 0) { 
-        b.y = canvas.height + b.radius;
-        b.x = Math.random() * canvas.width;
-      }
-    });
-  }
-
-  function animate() {
-    drawBackground();
-    updateBubbles();
-    requestAnimationFrame(animate);
-  }
-  <div id="top10">
-  <h3>🏆 أفضل 10 لاعبين</h3>
-  <ol id="top10-list"></ol>
-</div>
-
-
-  animate();
-
-  // ربط التفاعل مع اللعبة
-  const choices = document.getElementById('choices');
-  choices.addEventListener('click', e => {
-    if (e.target.tagName === 'BUTTON') {
-      // عند الإجابة الصحيحة (يمكن ربطها باللعبة الفعلية)
-      bubbleSpeedMultiplier = 3; // فقاعات أسرع
-      labTubes.style.transform = 'translateY(-10px)'; // حركة الأنابيب
-      setTimeout(() => {
-        bubbleSpeedMultiplier = 1;
-        labTubes.style.transform = 'translateY(0)';
-      }, 500);
+function renderTopPlayers(){
+  const list = document.getElementById('topPlayers-list');
+  let scores = JSON.parse(localStorage.getItem('all_scores')) || [];
+  let bestPerPlayer = {};
+  scores.forEach(p=>{
+    if(!bestPerPlayer[p.name] || p.score>bestPerPlayer[p.name]){
+      bestPerPlayer[p.name]=p.score;
     }
   });
+  let playersArray=Object.keys(bestPerPlayer).map(name=>({name,score:bestPerPlayer[name]}));
+  playersArray.sort((a,b)=>b.score-a.score);
+  playersArray=playersArray.slice(0,20);
+  list.innerHTML='';
+  playersArray.forEach(p=>{
+    const li=document.createElement('li');
+    li.textContent=`${p.name} - ${p.score} نقطة`;
+    list.appendChild(li);
+  });
+}
+
+/*-------------------- نهاية اللعبة --------------------*/
+function endGame(){
+  swapScreen('end-screen');
+  const playerName = ui.studentNameEnd.value.trim() || "طالب";
+  saveScore(playerName, Game.score);
+  renderTopScores();
+  renderTopPlayers();
+}
+
+/*-------------------- أزرار --------------------*/
+document.getElementById('btn-start').addEventListener('click',()=>swapScreen('game-screen'));
+document.getElementById('btn-restart').addEventListener('click',()=>swapScreen('start-screen'));
+document.getElementById('btn-restart-end').addEventListener('click',()=>swapScreen('start-screen'));
+
+/*-------------------- مثال أسئلة --------------------*/
+ui.questionText.innerText="حوّل 2 m إلى cm";
+ui.choices.innerHTML='';
+["200","20","2","0.2"].forEach(opt=>{
+  const btn=document.createElement('button');
+  btn.textContent=opt;
+  btn.onclick=()=>{Game.score+=10; ui.score.innerText=Game.score; endGame();}
+  ui.choices.appendChild(btn);
+});
 </script>
 
 </body>
 </html>
-
-
-
