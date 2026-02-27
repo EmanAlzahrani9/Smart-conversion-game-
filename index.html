@@ -1,45 +1,61 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>التحويل الذكي — مختبر الفيزياء</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>التحويل الذكي — مختبر الفيزياء</title>
 
-  <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-          integrity="sha512-9lN+N4v1aGdXyCmy2S4PT1nWZ1oQk7Gg4ZQdW5Wk5b0nHkQJ2w9m3J1UO4f8QZJm9Z6lW0v8Yk4r8E3sW7Kq3g=="
-          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+/* حجم الصور */
+.lab-logo { width: 180px; height: auto; display: block; margin: 0 auto 10px auto; }
+.lab-tubes { width: 200px; height: auto; display: block; margin: 10px auto; transition: transform 0.3s ease; }
+.hero { width: 150px; height: auto; display: block; margin: 0 auto; }
 
-  <style>
-    /* حجم الصور */
-    .lab-logo { width: 180px; height: auto; display: block; margin: 0 auto 10px auto; }
-    .lab-tubes { width: 200px; height: auto; display: block; margin: 10px auto; transition: transform 0.3s ease; }
-    .hero { width: 150px; height: auto; display: block; margin: 0 auto; }
+/* Canvas الخلفية */
+#backgroundCanvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+}
 
-    /* Canvas الخلفية */
-    #backgroundCanvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: -1;
-      width: 100%;
-      height: 100%;
-    }
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Cairo", sans-serif;
+  text-align: center;
+  position: relative;
+  overflow-x: hidden;
+}
 
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: "Cairo", sans-serif;
-      text-align: center;
-      position: relative;
-      overflow-x: hidden;
-    }
-  </style>
+#topPlayers, #topScores {
+  max-width: 400px;
+  margin: 20px auto;
+  background: rgba(15,20,40,0.8);
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+#topPlayers h3, #topScores h3 {
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+#topPlayers-list li, #topScores-list li {
+  margin: 3px 0;
+  text-align: right;
+  color: #eef2ff;
+}
+</style>
 </head>
 <body>
 
-<!-- Canvas الخلفية -->
 <canvas id="backgroundCanvas"></canvas>
 
 <!-- شاشة البداية -->
@@ -91,7 +107,7 @@
   <header class="hud">
     <div class="hud-item">المستوى: <span id="level">1</span>/3</div>
     <div class="hud-item">النقاط: <span id="score">0</span></div>
-    <div class="hud-item">الوقت: <span id="time">60</span></div>
+    <div class="hud-item">الوقت: <span id="time">60</span>s</div>
     <div class="progress-wrap">
       <div class="progress" id="progress-bar"></div>
     </div>
@@ -126,12 +142,17 @@
     <button id="btn-certificate" class="primary" style="display:none;">📄 تحميل شهادة الإنجاز</button>
   </div>
 </section>
-  
-  <div id="topPlayers">
-  <h3>🏆 أفضل 10 لاعبين</h3>
-  <ol id="top10-list"></ol>
+
+<!-- قوائم اللاعبين والنقاط -->
+<div id="topPlayers">
+  <h3>🏆 أفضل 20 لاعب</h3>
+  <ol id="topPlayers-list"></ol>
 </div>
 
+<div id="topScores">
+  <h3>🔥 أعلى 20 سكور</h3>
+  <ol id="topScores-list"></ol>
+</div>
 
 <footer class="credits">
   © المدرسة: <b>الثانوية الثانية مسارات بمكة المكرمة</b> — بإشراف المعلمة: <b>إيمان الزهراني</b>
@@ -139,83 +160,41 @@
 
 <script src="game.js"></script>
 
-<!-- Canvas + تأثير التفاعل -->
 <script>
-  const canvas = document.getElementById('backgroundCanvas');
-  const ctx = canvas.getContext('2d');
+const canvas = document.getElementById('backgroundCanvas');
+const ctx = canvas.getContext('2d');
+function resizeCanvas(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
-  function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+// فقاعات تفاعلية
+const bubbles = [];
+for(let i=0;i<30;i++){
+  bubbles.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, radius:5+Math.random()*10, speed:0.5+Math.random(), color:`rgba(255,255,255,${0.3+Math.random()*0.5})`});
+}
+let bubbleSpeedMultiplier = 1;
+const labTubes = document.querySelector('.lab-tubes');
+
+function drawBackground(){
+  const gradient = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+  gradient.addColorStop(0,'#c8e6c9'); gradient.addColorStop(1,'#b2ebf2');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  bubbles.forEach(b=>{ctx.beginPath();ctx.arc(b.x,b.y,b.radius,0,Math.PI*2);ctx.fillStyle=b.color;ctx.fill();});
+}
+
+function updateBubbles(){ bubbles.forEach(b=>{b.y -= b.speed*bubbleSpeedMultiplier; if(b.y+b.radius<0){ b.y=canvas.height+b.radius; b.x=Math.random()*canvas.width;}}); }
+function animate(){ drawBackground(); updateBubbles(); requestAnimationFrame(animate); }
+animate();
+
+const choices = document.getElementById('choices');
+choices.addEventListener('click', e=>{
+  if(e.target.tagName==='BUTTON'){
+    bubbleSpeedMultiplier=3;
+    labTubes.style.transform='translateY(-10px)';
+    setTimeout(()=>{ bubbleSpeedMultiplier=1; labTubes.style.transform='translateY(0)'; },500);
   }
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
-
-  // الفقاعات
-  const bubbles = [];
-  const numBubbles = 30;
-  for (let i = 0; i < numBubbles; i++) {
-    bubbles.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      radius: 5 + Math.random() * 10,
-      speed: 0.5 + Math.random(),
-      color: `rgba(255,255,255,${0.3 + Math.random()*0.5})`
-    });
-  }
-
-  // زيادة سرعة الفقاعات عند الإجابة الصحيحة
-  let bubbleSpeedMultiplier = 1;
-
-  const labTubes = document.querySelector('.lab-tubes');
-
-  function drawBackground() {
-    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    gradient.addColorStop(0, '#c8e6c9');
-    gradient.addColorStop(1, '#b2ebf2');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // رسم الفقاعات
-    bubbles.forEach(b => {
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2);
-      ctx.fillStyle = b.color;
-      ctx.fill();
-    });
-  }
-
-  function updateBubbles() {
-    bubbles.forEach(b => {
-      b.y -= b.speed * bubbleSpeedMultiplier;
-      if (b.y + b.radius < 0) { 
-        b.y = canvas.height + b.radius;
-        b.x = Math.random() * canvas.width;
-      }
-    });
-  }
-
-  function animate() {
-    drawBackground();
-    updateBubbles();
-    requestAnimationFrame(animate);
-  }
-
-  animate();
-
-  // ربط التفاعل مع اللعبة
-  const choices = document.getElementById('choices');
-  choices.addEventListener('click', e => {
-    if (e.target.tagName === 'BUTTON') {
-      // عند الإجابة الصحيحة (يمكن ربطها باللعبة الفعلية)
-      bubbleSpeedMultiplier = 3; // فقاعات أسرع
-      labTubes.style.transform = 'translateY(-10px)'; // حركة الأنابيب
-      setTimeout(() => {
-        bubbleSpeedMultiplier = 1;
-        labTubes.style.transform = 'translateY(0)';
-      }, 500);
-    }
-  });
+});
 </script>
 
 </body>
