@@ -44,7 +44,7 @@ const Game = {
   timeLeft: 60,   
   timerId: null,   
   asked: 0,   
-  levelErrors: 0, // عداد الأخطاء لكل مستوى   
+  levelErrors: 0,
 
   questions: [],   
   questionsPerLevel: 5,   
@@ -78,7 +78,7 @@ function getPrefixPool(range){
   if(range === 'extended')     
     return PREFIXES.filter(p => [-9,-6,-3,-2,0,3,6,9,12].includes(p.exp));    
 
-  return PREFIXES; // كاملة 
+  return PREFIXES;
 }  
 
 /*-----------------------------  مؤثرات صوتية ------------------------------*/ 
@@ -235,14 +235,14 @@ function askNext(){
     }    
 
     ui.qText.innerHTML = q.text;   
-    ui.qText.style.fontWeight = 'bold'; // سؤال غامق
+    ui.qText.style.fontWeight = 'bold';
     ui.choices.innerHTML = '';    
 
     q.options.forEach(opt=>{
         const btn = document.createElement('button');
         btn.className = 'choice';
         btn.textContent = opt;
-        btn.style.fontSize = '1.2em'; // خيارات أكبر
+        btn.style.fontSize = '1.2em';
         btn.style.padding = '12px 24px';
         btn.addEventListener('click', ()=> handleAnswer(btn, q));
         ui.choices.appendChild(btn);
@@ -268,12 +268,12 @@ function handleAnswer(btn, q){
     else{     
         btn.classList.add('wrong');     
         beep('error');      
-        Game.levelErrors++; // زيادة الأخطاء في المستوى الحالي
+        Game.levelErrors++;
         Game.timeLeft = Math.max(0, Game.timeLeft - 5);     
         ui.time.textContent = Game.timeLeft;      
         ui.feedback.innerHTML = `❌ ليست صحيحة — حاول/ي مجددًا<br>خطأ ${Game.levelErrors} من 2<br>` + q.explain;      
 
-        if(Game.levelErrors >=2){
+        if(Game.levelErrors >= 2){
             endLevel(false, 'لقد ارتكبت خطأين في هذا المستوى!'); 
             return;
         }
@@ -300,13 +300,12 @@ function endLevel(won, msg){
     ui.endSummary.innerHTML = `${msg}<br>نقاطك: <b>${Game.score}</b>`;    
     ui.btnNext.style.display = (won && Game.level < Game.maxLevel) ? 'inline-block' : 'none';    
     ui.btnCert.style.display = (won && Game.level === Game.maxLevel) ? 'inline-block' : 'none';    
-    activatePulse(); 
-  const playerName = ui.studentInput.value.trim() || "طالب";
+    activatePulse();
 
-saveScore(playerName, Game.score);
-renderTopScores();
-renderTopPlayers();
-  
+    const playerName = ui.studentInput.value.trim() || "طالب";
+    saveScore(playerName, Game.score);
+    renderTopScores();
+    renderTopPlayers();
 }  
 
 /*-----------------------------  المستوى التالي ------------------------------*/ 
@@ -331,6 +330,59 @@ function swapScreen(name){
     Object.values(screens).forEach(s=> s.classList.remove('active'));   
     screens[name].classList.add('active'); 
 }  
+
+/*=================  حفظ البيانات  =================*/
+
+function saveScore(name, score){
+    let scores = JSON.parse(localStorage.getItem('all_scores')) || [];
+    scores.push({ name, score });
+    localStorage.setItem('all_scores', JSON.stringify(scores));
+}
+
+/*=================  أعلى 20 سكور  =================*/
+
+function renderTopScores(){
+    const list = document.getElementById('topScores-list');
+    if(!list) return;
+
+    let scores = JSON.parse(localStorage.getItem('all_scores')) || [];
+    scores.sort((a,b)=> b.score - a.score);
+    scores = scores.slice(0,20);
+
+    list.innerHTML = '';
+    scores.forEach(p=>{
+        const li = document.createElement('li');
+        li.textContent = `${p.name} - ${p.score} نقطة`;
+        list.appendChild(li);
+    });
+}
+
+/*=================  أفضل 20 لاعب (بدون تكرار)  =================*/
+
+function renderTopPlayers(){
+    const list = document.getElementById('topPlayers-list');
+    if(!list) return;
+
+    let scores = JSON.parse(localStorage.getItem('all_scores')) || [];
+
+    let bestPerPlayer = {};
+    scores.forEach(p=>{
+        if(!bestPerPlayer[p.name] || p.score > bestPerPlayer[p.name]){
+            bestPerPlayer[p.name] = p.score;
+        }
+    });
+
+    let playersArray = Object.keys(bestPerPlayer).map(name=>({ name, score: bestPerPlayer[name] }));
+    playersArray.sort((a,b)=> b.score - a.score);
+    playersArray = playersArray.slice(0,20);
+
+    list.innerHTML = '';
+    playersArray.forEach(p=>{
+        const li = document.createElement('li');
+        li.textContent = `${p.name} - ${p.score} نقطة`;
+        list.appendChild(li);
+    });
+}
 
 /*-----------------------------  شهادة PDF ------------------------------*/ 
 function generateCertificate(student, score, time) {   
@@ -364,87 +416,6 @@ function generateCertificate(student, score, time) {
     doc.text("معلمتكم: إيمان الزهراني", 420, 350, { align: "center" });    
 
     doc.save(`شهادة-${student}.pdf`); 
-  function saveToTop10(name, score){
-    let top10 = JSON.parse(localStorage.getItem('smart_top10')) || [];
-    top10.push({ name, score });
-    top10.sort((a,b) => b.score - a.score);
-    top10 = top10.slice(0,10);
-    localStorage.setItem('smart_top10', JSON.stringify(top10));
-}
-  /*=================  حفظ البيانات  =================*/
-
-// حفظ كل النتائج (لأعلى 20 سكور)
-function saveScore(name, score){
-    let scores = JSON.parse(localStorage.getItem('all_scores')) || [];
-    scores.push({ name, score });
-    localStorage.setItem('all_scores', JSON.stringify(scores));
-}
-
-
-/*=================  أعلى 20 سكور  =================*/
-
-function renderTopScores(){
-    const list = document.getElementById('topScores-list');
-    if(!list) return;
-
-    let scores = JSON.parse(localStorage.getItem('all_scores')) || [];
-
-    scores.sort((a,b)=> b.score - a.score);
-    scores = scores.slice(0,20);
-
-    list.innerHTML = '';
-    scores.forEach(p=>{
-        const li = document.createElement('li');
-        li.textContent = `${p.name} - ${p.score} نقطة`;
-        list.appendChild(li);
-    });
-}
-
-
-/*=================  أفضل 20 لاعب (بدون تكرار)  =================*/
-
-function renderTopPlayers(){
-    const list = document.getElementById('topPlayers-list');
-    if(!list) return;
-
-    let scores = JSON.parse(localStorage.getItem('all_scores')) || [];
-
-    // نجمع أعلى نتيجة لكل لاعب
-    let bestPerPlayer = {};
-
-    scores.forEach(p=>{
-        if(!bestPerPlayer[p.name] || p.score > bestPerPlayer[p.name]){
-            bestPerPlayer[p.name] = p.score;
-        }
-    });
-
-    let playersArray = Object.keys(bestPerPlayer).map(name=>{
-        return { name, score: bestPerPlayer[name] };
-    });
-
-    playersArray.sort((a,b)=> b.score - a.score);
-    playersArray = playersArray.slice(0,20);
-
-    list.innerHTML = '';
-    playersArray.forEach(p=>{
-        const li = document.createElement('li');
-        li.textContent = `${p.name} - ${p.score} نقطة`;
-        list.appendChild(li);
-    });
-}
-
-function renderTop10(){
-    const list = document.getElementById('top10-list');
-    if(!list) return;
-    const top10 = JSON.parse(localStorage.getItem('smart_top10')) || [];
-    list.innerHTML = '';
-    top10.forEach(p=>{
-        const li = document.createElement('li');
-        li.textContent = `${p.name} - ${p.score} نقطة`;
-        list.appendChild(li);
-    });
-}
-
 }  
 
 /*-----------------------------  تفعيل زر الشهادة ------------------------------*/ 
@@ -458,5 +429,6 @@ ui.btnStart.addEventListener('click', startGame);
 ui.btnNext.addEventListener('click', nextLevel); 
 ui.btnRestart.addEventListener('click', restartGame);
 
-
-
+/*-----------------------------  تحميل القوائم عند فتح الصفحة ------------------------------*/
+renderTopScores();
+renderTopPlayers();
