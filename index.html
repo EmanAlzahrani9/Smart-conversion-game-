@@ -16,7 +16,7 @@
 
 /* Canvas الخلفية */
 #backgroundCanvas {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   z-index: -1;
@@ -24,33 +24,13 @@
   height: 100%;
 }
 
-body {
-  margin: 0;
-  padding: 0;
-  font-family: "Cairo", sans-serif;
-  text-align: center;
-  position: relative;
-  overflow-x: hidden;
+/* إصلاح شريط التقدم داخل الهيدر */
+.hud {
+  flex-wrap: wrap;
 }
-
-#topPlayers, #topScores {
-  max-width: 400px;
-  margin: 20px auto;
-  background: rgba(15,20,40,0.8);
-  padding: 12px 16px;
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.2);
-}
-
-#topPlayers h3, #topScores h3 {
-  margin-bottom: 8px;
-  font-weight: bold;
-}
-
-#topPlayers-list li, #topScores-list li {
-  margin: 3px 0;
-  text-align: right;
-  color: #eef2ff;
+.progress-wrap {
+  width: 100%;
+  flex-basis: 100%;
 }
 </style>
 </head>
@@ -109,7 +89,7 @@ body {
     <div class="hud-item">النقاط: <span id="score">0</span></div>
     <div class="hud-item">الوقت: <span id="time">60</span>s</div>
     <div class="progress-wrap">
-      <div class="progress" id="progress-bar"></div>
+      <div id="progress-bar"></div>
     </div>
   </header>
 
@@ -158,7 +138,7 @@ body {
   © المدرسة: <b>الثانوية الثانية مسارات بمكة المكرمة</b> — بإشراف المعلمة: <b>إيمان الزهراني</b>
 </footer>
 
-<script src="game.js"></script>
+<script type="module" src="game.js"></script>
 
 <script>
 const canvas = document.getElementById('backgroundCanvas');
@@ -170,29 +150,53 @@ resizeCanvas();
 // فقاعات تفاعلية
 const bubbles = [];
 for(let i=0;i<30;i++){
-  bubbles.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, radius:5+Math.random()*10, speed:0.5+Math.random(), color:`rgba(255,255,255,${0.3+Math.random()*0.5})`});
+  bubbles.push({
+    x: Math.random()*canvas.width,
+    y: Math.random()*canvas.height,
+    radius: 5+Math.random()*10,
+    speed: 0.5+Math.random(),
+    color: `rgba(255,255,255,${0.3+Math.random()*0.5})`
+  });
 }
 let bubbleSpeedMultiplier = 1;
 const labTubes = document.querySelector('.lab-tubes');
 
 function drawBackground(){
   const gradient = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
-  gradient.addColorStop(0,'#c8e6c9'); gradient.addColorStop(1,'#b2ebf2');
+  gradient.addColorStop(0,'#0a1628');
+  gradient.addColorStop(1,'#0d2240');
   ctx.fillStyle = gradient;
   ctx.fillRect(0,0,canvas.width,canvas.height);
-  bubbles.forEach(b=>{ctx.beginPath();ctx.arc(b.x,b.y,b.radius,0,Math.PI*2);ctx.fillStyle=b.color;ctx.fill();});
+  bubbles.forEach(b=>{
+    ctx.beginPath();
+    ctx.arc(b.x,b.y,b.radius,0,Math.PI*2);
+    ctx.fillStyle=b.color;
+    ctx.fill();
+  });
 }
 
-function updateBubbles(){ bubbles.forEach(b=>{b.y -= b.speed*bubbleSpeedMultiplier; if(b.y+b.radius<0){ b.y=canvas.height+b.radius; b.x=Math.random()*canvas.width;}}); }
+function updateBubbles(){
+  bubbles.forEach(b=>{
+    b.y -= b.speed * bubbleSpeedMultiplier;
+    if(b.y + b.radius < 0){
+      b.y = canvas.height + b.radius;
+      b.x = Math.random() * canvas.width;
+    }
+  });
+}
+
 function animate(){ drawBackground(); updateBubbles(); requestAnimationFrame(animate); }
 animate();
 
-const choices = document.getElementById('choices');
-choices.addEventListener('click', e=>{
+const choicesEl = document.getElementById('choices');
+choicesEl.addEventListener('click', e=>{
   if(e.target.tagName==='BUTTON'){
-    bubbleSpeedMultiplier=3;
-    labTubes.style.transform='translateY(-10px)';
-    setTimeout(()=>{ bubbleSpeedMultiplier=1; labTubes.style.transform='translateY(0)'; },500);
+    bubbleSpeedMultiplier = 3;
+    if(labTubes) labTubes.style.transform = 'translateY(-10px)';
+    setTimeout(()=>{
+      bubbleSpeedMultiplier = 1;
+      if(labTubes) labTubes.style.transform = 'translateY(0)';
+    }, 500);
   }
 });
 </script>
