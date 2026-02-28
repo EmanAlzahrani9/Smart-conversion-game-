@@ -346,56 +346,86 @@ function swapScreen(name){
     screens[name].classList.add('active'); 
 }  
 
-/*=================  حفظ البيانات  =================*/
+/*=================  Firebase Setup  =================*/
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBWbITwH_vg8R41v9Gk-pwy4rcyqPlWr6s",
+    authDomain: "smart-game-822dd.firebaseapp.com",
+    databaseURL: "https://smart-game-822dd-default-rtdb.firebaseio.com",
+    projectId: "smart-game-822dd",
+    storageBucket: "smart-game-822dd.firebasestorage.app",
+    messagingSenderId: "555814813008",
+    appId: "1:555814813008:web:7d45354b35540db7894055"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getDatabase(firebaseApp);
+
+/*=================  حفظ النتيجة في Firebase  =================*/
 
 function saveScore(name, score){
-    let scores = JSON.parse(localStorage.getItem('all_scores')) || [];
-    scores.push({ name, score });
-    localStorage.setItem('all_scores', JSON.stringify(scores));
+    const scoresRef = ref(db, 'scores');
+    push(scoresRef, { name, score, time: Date.now() });
 }
 
-/*=================  أعلى 20 سكور  =================*/
+/*=================  أعلى 20 سكور (مع تكرار) =================*/
 
 function renderTopScores(){
     const list = document.getElementById('topScores-list');
     if(!list) return;
 
-    let scores = JSON.parse(localStorage.getItem('all_scores')) || [];
-    scores.sort((a,b)=> b.score - a.score);
-    scores = scores.slice(0,20);
+    const scoresRef = ref(db, 'scores');
+    onValue(scoresRef, (snapshot) => {
+        const data = snapshot.val();
+        if(!data){ list.innerHTML = '<li>لا توجد نتائج بعد</li>'; return; }
 
-    list.innerHTML = '';
-    scores.forEach(p=>{
-        const li = document.createElement('li');
-        li.textContent = `${p.name} - ${p.score} نقطة`;
-        list.appendChild(li);
+        let scores = Object.values(data);
+        scores.sort((a,b) => b.score - a.score);
+        scores = scores.slice(0, 20);
+
+        list.innerHTML = '';
+        scores.forEach((p, i) => {
+            const li = document.createElement('li');
+            li.textContent = `${p.name} — ${p.score} نقطة`;
+            list.appendChild(li);
+        });
     });
 }
 
-/*=================  أفضل 20 لاعب (بدون تكرار)  =================*/
+/*=================  أفضل 20 لاعب (بدون تكرار) =================*/
 
 function renderTopPlayers(){
     const list = document.getElementById('topPlayers-list');
     if(!list) return;
 
-    let scores = JSON.parse(localStorage.getItem('all_scores')) || [];
+    const scoresRef = ref(db, 'scores');
+    onValue(scoresRef, (snapshot) => {
+        const data = snapshot.val();
+        if(!data){ list.innerHTML = '<li>لا توجد نتائج بعد</li>'; return; }
 
-    let bestPerPlayer = {};
-    scores.forEach(p=>{
-        if(!bestPerPlayer[p.name] || p.score > bestPerPlayer[p.name]){
-            bestPerPlayer[p.name] = p.score;
-        }
-    });
+        let scores = Object.values(data);
 
-    let playersArray = Object.keys(bestPerPlayer).map(name=>({ name, score: bestPerPlayer[name] }));
-    playersArray.sort((a,b)=> b.score - a.score);
-    playersArray = playersArray.slice(0,20);
+        // أعلى نتيجة لكل لاعب فقط
+        let bestPerPlayer = {};
+        scores.forEach(p => {
+            if(!bestPerPlayer[p.name] || p.score > bestPerPlayer[p.name]){
+                bestPerPlayer[p.name] = p.score;
+            }
+        });
 
-    list.innerHTML = '';
-    playersArray.forEach(p=>{
-        const li = document.createElement('li');
-        li.textContent = `${p.name} - ${p.score} نقطة`;
-        list.appendChild(li);
+        let playersArray = Object.keys(bestPerPlayer).map(name => ({ name, score: bestPerPlayer[name] }));
+        playersArray.sort((a,b) => b.score - a.score);
+        playersArray = playersArray.slice(0, 20);
+
+        list.innerHTML = '';
+        playersArray.forEach(p => {
+            const li = document.createElement('li');
+            li.textContent = `${p.name} — ${p.score} نقطة`;
+            list.appendChild(li);
+        });
     });
 }
 
